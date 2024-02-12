@@ -310,6 +310,13 @@ impl Server {
         }
     }
 
+    /// Login to a GSLT account
+    pub fn log_on(&self, token: &str) {
+        unsafe {
+            sys::SteamAPI_ISteamGameServer_LogOn(self.server, token.as_ptr() as *const _);
+        }
+    }
+
     /// If active, updates the master server with this server's presence so players can find it via
     /// the steam matchmaking/server browser interfaces.
     pub fn enable_heartbeats(&self, active: bool) {

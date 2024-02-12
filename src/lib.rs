@@ -83,6 +83,18 @@ impl<Manager> Clone for Client<Manager> {
     }
 }
 
+pub struct Server<Manager = ServerManager> {
+    inner: Arc<Inner<Manager>>,
+}
+
+impl<Manager> Clone for Server<Manager> {
+    fn clone(&self) -> Self {
+        Server {
+            inner: self.inner.clone(),
+        }
+    }
+}
+
 /// Allows access parts of the steam api that can only be called
 /// on a single thread at any given time.
 pub struct SingleClient<Manager = ClientManager> {
@@ -300,6 +312,189 @@ where
 }
 
 impl<Manager> Client<Manager> {
+    /// Registers the passed function as a callback for the
+    /// given type.
+    ///
+    /// The callback will be run on the thread that `run_callbacks`
+    /// is called when the event arrives.
+    pub fn register_callback<C, F>(&self, f: F) -> CallbackHandle<Manager>
+    where
+        C: Callback,
+        F: FnMut(C) + 'static + Send,
+    {
+        unsafe { register_callback(&self.inner, f) }
+    }
+
+    /// Returns an accessor to the steam utils interface
+    pub fn utils(&self) -> Utils<Manager> {
+        unsafe {
+            let utils = sys::SteamAPI_SteamUtils_v010();
+            debug_assert!(!utils.is_null());
+            Utils {
+                utils: utils,
+                _inner: self.inner.clone(),
+            }
+        }
+    }
+
+    /// Returns an accessor to the steam matchmaking interface
+    pub fn matchmaking(&self) -> Matchmaking<Manager> {
+        unsafe {
+            let mm = sys::SteamAPI_SteamMatchmaking_v009();
+            debug_assert!(!mm.is_null());
+            Matchmaking {
+                mm: mm,
+                inner: self.inner.clone(),
+            }
+        }
+    }
+
+    /// Returns an accessor to the steam networking interface
+    pub fn networking(&self) -> Networking<Manager> {
+        unsafe {
+            let net = sys::SteamAPI_SteamNetworking_v006();
+            debug_assert!(!net.is_null());
+            Networking {
+                net: net,
+                _inner: self.inner.clone(),
+            }
+        }
+    }
+
+    /// Returns an accessor to the steam apps interface
+    pub fn apps(&self) -> Apps<Manager> {
+        unsafe {
+            let apps = sys::SteamAPI_SteamApps_v008();
+            debug_assert!(!apps.is_null());
+            Apps {
+                apps: apps,
+                _inner: self.inner.clone(),
+            }
+        }
+    }
+
+    /// Returns an accessor to the steam friends interface
+    pub fn friends(&self) -> Friends<Manager> {
+        unsafe {
+            let friends = sys::SteamAPI_SteamFriends_v017();
+            debug_assert!(!friends.is_null());
+            Friends {
+                friends: friends,
+                inner: self.inner.clone(),
+            }
+        }
+    }
+
+    /// Returns an accessor to the steam input interface
+    pub fn input(&self) -> Input<Manager> {
+        unsafe {
+            let input = sys::SteamAPI_SteamInput_v006();
+            debug_assert!(!input.is_null());
+            Input {
+                input,
+                _inner: self.inner.clone(),
+            }
+        }
+    }
+
+    /// Returns an accessor to the steam user interface
+    pub fn user(&self) -> User<Manager> {
+        unsafe {
+            let user = sys::SteamAPI_SteamUser_v023();
+            debug_assert!(!user.is_null());
+            User {
+                user,
+                _inner: self.inner.clone(),
+            }
+        }
+    }
+
+    /// Returns an accessor to the steam user stats interface
+    pub fn user_stats(&self) -> UserStats<Manager> {
+        unsafe {
+            let us = sys::SteamAPI_SteamUserStats_v012();
+            debug_assert!(!us.is_null());
+            UserStats {
+                user_stats: us,
+                inner: self.inner.clone(),
+            }
+        }
+    }
+
+    /// Returns an accessor to the steam remote play interface
+    pub fn remote_play(&self) -> RemotePlay<Manager> {
+        unsafe {
+            let rp = sys::SteamAPI_SteamRemotePlay_v002();
+            debug_assert!(!rp.is_null());
+            RemotePlay {
+                rp,
+                inner: self.inner.clone(),
+            }
+        }
+    }
+
+    /// Returns an accessor to the steam remote storage interface
+    pub fn remote_storage(&self) -> RemoteStorage<Manager> {
+        unsafe {
+            let rs = sys::SteamAPI_SteamRemoteStorage_v016();
+            debug_assert!(!rs.is_null());
+            let util = sys::SteamAPI_SteamUtils_v010();
+            debug_assert!(!util.is_null());
+            RemoteStorage {
+                rs,
+                util,
+                inner: self.inner.clone(),
+            }
+        }
+    }
+
+    /// Returns an accessor to the steam UGC interface (steam workshop)
+    pub fn ugc(&self) -> UGC<Manager> {
+        unsafe {
+            let ugc = sys::SteamAPI_SteamUGC_v018();
+            debug_assert!(!ugc.is_null());
+            UGC {
+                ugc,
+                inner: self.inner.clone(),
+            }
+        }
+    }
+
+    pub fn networking_messages(&self) -> networking_messages::NetworkingMessages<Manager> {
+        unsafe {
+            let net = sys::SteamAPI_SteamNetworkingMessages_SteamAPI_v002();
+            debug_assert!(!net.is_null());
+            networking_messages::NetworkingMessages {
+                net,
+                inner: self.inner.clone(),
+            }
+        }
+    }
+
+    pub fn networking_sockets(&self) -> networking_sockets::NetworkingSockets<Manager> {
+        unsafe {
+            let sockets = sys::SteamAPI_SteamNetworkingSockets_SteamAPI_v012();
+            debug_assert!(!sockets.is_null());
+            networking_sockets::NetworkingSockets {
+                sockets,
+                inner: self.inner.clone(),
+            }
+        }
+    }
+
+    pub fn networking_utils(&self) -> networking_utils::NetworkingUtils<Manager> {
+        unsafe {
+            let utils = sys::SteamAPI_SteamNetworkingUtils_SteamAPI_v004();
+            debug_assert!(!utils.is_null());
+            networking_utils::NetworkingUtils {
+                utils,
+                inner: self.inner.clone(),
+            }
+        }
+    }
+}
+
+impl<Manager> Server<Manager> {
     /// Registers the passed function as a callback for the
     /// given type.
     ///
